@@ -12,8 +12,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/api/trending")
 async def get_trending_repos():
-    with open("github_trending_repos.json", "r") as f:
+    with open("../github_trending_repos.json", "r") as f:
         data = json.load(f)
     return data
