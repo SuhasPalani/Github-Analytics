@@ -1,0 +1,40 @@
+FROM jupyter/base-notebook:latest
+
+USER root
+
+# Install system dependencies with retries
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* || (sleep 5 && apt-get update && apt-get install -y build-essential)
+
+USER ${NB_UID}
+
+# Create conda environment
+RUN conda create -n env python=3.9 ipykernel -y
+
+# Make RUN commands use the new environment
+SHELL ["conda", "run", "-n", "env", "/bin/bash", "-c"]
+
+# Install the kernel
+RUN python -m ipykernel install --user --name env --display-name "Python (env)"
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Install pip requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Make sure we use the kernel we just created
+ENV JUPYTER_DEFAULT_KERNEL=env
+
+# Switch back to jovyan to avoid accidental container runs as root
+USER ${NB_UID}
+
+WORKDIR /home/jovyan/work
+
+# Copy the notebook file
+COPY ["Github Analytics.ipynb", "."]
+
+# Set the command to run Jupyter notebook
+CMD ["jupyter", "nbconvert", "--to", "notebook", "--execute", "/home/jovyan/work/Github Analytics.ipynb", "--output-dir", "/home/jovyan/work"]

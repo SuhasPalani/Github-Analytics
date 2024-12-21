@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    volumes:
+      - ./:/app
+    command: jupyter nbconvert --to notebook --execute "/app/Github Analytics.ipynb" --output-dir /app
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - jupyter
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    volumes:
+      - ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - jupyter
+      - fastapi
